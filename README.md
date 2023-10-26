@@ -5,7 +5,7 @@ Welcome to my Web3 Fruit Voting Full Stack App! This application allows users to
 ## Project Structure
 
 - **contracts/**: Contains the Solidity smart contract `FruitVoting.sol` where users can vote for a fruit and get the votes a fruit has.
-- **backend/**: TypeScript node API exposing the `/vote` and `/getVotes` endpoints for the frontend. Run the backend with `yarn run dev`. Ensure to fill the `.env` file with the necessary API keys. For a full description, check the [README.md](https://github.com/reymom/) in the backend folder.
+- **backend/**: TypeScript node API exposing the `/vote` and `/getVotes` endpoints for the frontend. Run the backend with `yarn run dev`. Ensure to fill the `.env` file with the necessary API keys. For a full description, check the [README.md](https://github.com/reymom/fruit-voting-web3/tree/main/backend#readme) in the backend folder.
 - **frontend/**: Next.js TypeScript React app with MetaMask integration. Users can select a fruit from a dropdown, send votes to the backend, and receive the votes as well. Run the frontend with `npm run dev`.
 
 ## Prerequisites
@@ -48,7 +48,7 @@ REPORT_GAS=true npx hardhat test
 
 ## API Endpoints
 
-For a complete overview, refer to [README.md](https://github.com/reymom/)
+For a complete overview, refer to [README.md](https://github.com/reymom/fruit-voting-web3/tree/main/backend#readme)
 
 ### `GET /vote/:fruitName`
 
