@@ -1,12 +1,50 @@
 "use client";
-
+//external
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import detectEthereumProvider from '@metamask/detect-provider'
-
+//internal
 import { vote, getVotes } from "@/api/api";
-import { formatBalance } from '@/utils';
+import { formatBalance, shortenHexString, Item } from '@/utils';
+//styling
 import styles from './page.module.css';
+import { createTheme, styled, ThemeProvider } from "@mui/material/styles";
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import AppBar from '@mui/material/AppBar';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Toolbar from '@mui/material/Toolbar';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Link from '@mui/material/Link';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import SendIcon from '@mui/icons-material/Send';
+
+export const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#fcba03",
+        },
+        action: {
+            disabledBackground: '#cac5fc',
+            disabled: '#720775'
+        },
+    },
+});
+
+const buttonTheme = createTheme({
+    palette: {
+        action: {
+            disabledBackground: '#cac5fc',
+            disabled: '#720775'
+        },
+    },
+});
 
 interface GetVotesResponse {
     fruit: string;
@@ -22,6 +60,7 @@ export default function Home() {
 
     const [hasProvider, setHasProvider] = useState<boolean | null>(null);
     const [signer, setSigner] = useState<ethers.JsonRpcSigner>();
+    // const [provider, setProvider] = useState<ethers.BrowserProvider>();
     const [wallet, setWallet] = useState(initialState);
 
     const options = [
@@ -38,9 +77,12 @@ export default function Home() {
 
     useEffect(() => {
         const browseProvider = async () => {
-            const bProvider = new ethers.BrowserProvider(window.ethereum);
-            const bSigner = await bProvider.getSigner();
-            setSigner(bSigner)
+            if (wallet.accounts.length > 0) {
+                const bProvider = new ethers.BrowserProvider(window.ethereum);
+                const bSigner = await bProvider.getSigner();
+                setSigner(bSigner)
+                // setProvider(bProvider);
+            }
         };
         browseProvider();
     }, [wallet]);
@@ -55,10 +97,10 @@ export default function Home() {
         }
 
         const getProvider = async () => {
-            const provider = await detectEthereumProvider({ silent: true })
-            setHasProvider(Boolean(provider))
+            const ethProvider = await detectEthereumProvider({ silent: true })
+            setHasProvider(Boolean(ethProvider))
 
-            if (provider) {
+            if (ethProvider) {
                 const accounts = await window.ethereum.request(
                     { method: 'eth_accounts' }
                 )
@@ -67,7 +109,7 @@ export default function Home() {
             }
         }
 
-        getProvider()
+        getProvider();
 
         return () => {
             window.ethereum?.removeListener('accountsChanged', refreshAccounts)
@@ -89,11 +131,12 @@ export default function Home() {
         updateWallet(accounts)
     }
 
-    const handleFruitNameVoteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedFruitToVote(e.target.value);
+    const handleFruitNameVoteChange = (e: SelectChangeEvent) => {
+        setSelectedFruitToVote(e.target.value as string);
     }
 
     const onClickVote = async (e: React.MouseEvent<HTMLElement>) => {
+        // const signer = await provider!.getSigner();
         if (signer === undefined) {
             console.error("no signer defined!");
         }
@@ -112,81 +155,119 @@ export default function Home() {
     }
 
     return (
-        <main className={styles.main}>
-            <div className={styles.description}>
-                <p>
-                    Fruit Voting &nbsp;
-                    <code className={styles.code}>ethers.ts</code>
-                </p>
+        <div className={styles.container}>
 
-                <div>
-                    {!hasProvider ? <p><code>Injected Provider Does Not Exist</code></p> : ''}
+            <Box sx={{ height: '5 %', flexGrow: 0, marginBottom: '100px' }}>
+                <AppBar>
+                    <Toolbar>
+                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                            Fruit Voting
+                        </Typography>
+                        <Box>
+                            {
+                                !hasProvider ?
+                                    <Button variant="outlined" color="error">
+                                        Injected Provider Does Not Exist
+                                    </Button> : ''
+                            }
+                            {
+                                wallet.accounts.length < 1 &&
+                                <Button variant="contained" color="success" onClick={handleConnect}>
+                                    Connect MetaMask
+                                </Button>
+                            }
+                            {
+                                wallet.accounts.length > 0 &&
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        p: 1,
+                                        m: 1,
+                                        bgcolor: 'background.paper',
+                                        borderRadius: 1,
+                                    }}
+                                >
+                                    <Item>{shortenHexString(wallet.accounts[0])}</Item>
+                                    <Item>{wallet.balance} eth</Item>
+                                </Box>
 
-                    {window.ethereum?.isMetaMask && wallet.accounts.length < 1 &&
-                        <button onClick={handleConnect}>Connect MetaMask</button>
-                    }
+                            }
+                        </Box>
+                    </Toolbar>
+                </AppBar>
+            </Box>
 
-                    {wallet.accounts.length > 0 &&
-                        <>
-                            <p>
-                                Account: <code>{wallet.accounts[0]}</code>
-                            </p>
-                            <p>
-                                Balance: <code>{wallet.balance}</code>
-                            </p>
-                        </>
-                    }
-                </div>
-            </div>
+            <Box sx={{ minWidth: 500, flexGrow: 1 }}>
 
-            <div className={styles.center}>
-                <div>
-                    <label htmlFor="fruit">Select a Fruit:&nbsp;</label>
-
-                    <select
-                        value={selectedFruitToVote}
-                        onChange={handleFruitNameVoteChange}>
-                        {options.map(option => (
-                            <option key={option.value} value={option.value} disabled={option.disabled}>
-                                {option.text}
-                            </option>
-                        ))}
-                    </select>
-
-                    <button onClick={onClickVote}>Vote</button>
-                    {voting && <span>Voting...</span>}
+                <Box marginBottom="15px">
+                    {voting && <Button variant="contained" disabled>Voting...</Button>}
                     {txHash &&
-                        <a href={"https://sepolia.etherscan.io/tx/" + txHash} target="_blank">
-                            See Sepolia Transaction
-                        </a>
+                        <Button>
+                            <Link href={"https://sepolia.etherscan.io/tx/" + txHash} target="_blank" underline="none">
+                                See Sepolia Transaction
+                            </Link>
+                        </Button>
                     }
-                </div>
-                <div>
-                    <ul>
+                </Box>
+
+                <Grid container spacing={2} alignItems="center" marginBottom="50px" >
+                    <Grid item xs={8}>
+                        <FormControl fullWidth>
+                            <InputLabel id="fruit-label">Select a Fruit</InputLabel>
+                            <Select
+                                labelId="fruit-label"
+                                id="fruit-select"
+                                value={selectedFruitToVote}
+                                label="Fruit To Vote"
+                                onChange={handleFruitNameVoteChange}
+                            >
+                                {
+                                    options.map(option => (
+                                        <MenuItem
+                                            key={option.value}
+                                            value={option.value}
+                                            disabled={option.disabled}
+                                        >
+                                            {option.text}
+                                        </MenuItem>
+                                    ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={4} alignItems="center" container spacing={0} direction="column">
+                        <Button disabled={signer === undefined} variant="contained" endIcon={<SendIcon />} onClick={onClickVote}>
+                            Vote
+                        </Button>
+                    </Grid>
+                </Grid>
+
+                <Box sx={{ border: 1, borderRadius: '10px', bgcolor: 'primary.light' }}>
+                    <List dense={true}>
                         {options.map(option => (
                             !option.disabled &&
-                            <span key={option.value}>
-                                <li className={styles.liStyle}>
-                                    <div>
-                                        {option.text} &nbsp; &nbsp;
-                                    </div>
-                                    <div>
-                                        <button onClick={() => onClickGetVotes(option.value)}>
-                                            Check
-                                        </button>
-                                    </div>
-                                    <div>
-                                        {(votes?.fruit == option.value) ? <span>votes: {votes?.votes}</span> : ""}
-                                    </div>
-                                </li>
-                            </span>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-            <div className={styles.grid}>
+                            <ListItem key={option.value}>
+                                <ListItemText
+                                    primary={option.text}
+                                />
+                                {
+                                    (votes?.fruit == option.value) ?
+                                        <ThemeProvider theme={buttonTheme}>
+                                            <Button variant="contained" disabled>
+                                                {votes?.votes}
+                                            </Button>
+                                        </ThemeProvider> : ""
+                                }
 
-            </div>
-        </main>
+
+                                <Button color="secondary" disabled={signer === undefined} onClick={() => onClickGetVotes(option.value)}>
+                                    Check Votes
+                                </Button>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
+            </Box>
+        </div >
     )
 }
