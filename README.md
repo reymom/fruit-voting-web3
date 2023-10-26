@@ -2,6 +2,8 @@
 
 Welcome to my Web3 Fruit Voting Full Stack App! This application allows users to vote for their favorite fruits and retrieve the total votes for a fruit.
 
+![FruitVotingApp](media/FruitVoting.png)
+
 ## Project Structure
 
 - **contracts/**: Contains the Solidity smart contract `FruitVoting.sol` where users can vote for a fruit and get the votes a fruit has.
